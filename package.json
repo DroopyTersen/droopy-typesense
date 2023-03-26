@@ -1,0 +1,42 @@
+{
+  "name": "droopy-typesense",
+  "version": "1.0.0",
+  "description": "Wrapper around Typesense SDK with advanced TypeScript inference",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "format": "prettier --write ./src/**/*.{ts,tsx}",
+    "clean": "rm -rf dist"
+  },
+  "type": "commonjs",
+  "keywords": [
+    "typesense",
+    "search",
+    "typescript"
+  ],
+  "author": "Andrew Petersen",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/coverage-c8": "^0.29.7",
+    "@vitest/ui": "^0.29.7",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2",
+    "vitest": "^0.29.7"
+  },
+  "dependencies": {
+    "typesense": "^1.5.3"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  }
+}

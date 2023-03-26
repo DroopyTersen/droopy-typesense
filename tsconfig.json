@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": ["ES2019"],
+    "isolatedModules": true,
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "target": "ES2019",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
