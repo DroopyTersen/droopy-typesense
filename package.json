@@ -38,5 +38,9 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/droopytersen/droopy-typesense.git"
   }
 }

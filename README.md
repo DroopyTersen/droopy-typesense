@@ -38,30 +38,38 @@ The `createTypesenseRepo` function is a factory function that creates a reposito
 The function takes a Typesense client instance and a collection schema as its arguments and returns an object with methods for creating, updating, deleting, and searching documents in the collection.
 
 ```ts
-let bookmarks = createTypesenseRepo({
-  name: "bookmarks",
-  fields: {
-    id: {
-      type: "string",
+import { createTypesenseRepo } from "droopy-typesense";
+
+let bookmarks = createTypesenseRepo(
+  createTypesenseClient({
+    apiKey: process.env.TYPESENSE_API_KEY,
+    url: process.env.TYPESENSE_URL,
+  }),
+  {
+    name: "bookmarks",
+    fields: {
+      id: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+        facet: false,
+      },
+      description: {
+        type: "string",
+        facet: false,
+      },
+      host: {
+        type: "string",
+        facet: true,
+      },
+      url: {
+        type: "string",
+        index: false,
+      },
     },
-    title: {
-      type: "string",
-      facet: false,
-    },
-    description: {
-      type: "string",
-      facet: false,
-    },
-    host: {
-      type: "string",
-      facet: true,
-    },
-    url: {
-      type: "string",
-      index: false,
-    },
-  },
-});
+  }
+);
 // Import documents
 let bookmarksFromDb = await getAllBookmarksFromDB();
 await bookmarks.importDocuments(bookmarksFromDb);
