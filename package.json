@@ -1,6 +1,6 @@
 {
   "name": "droopy-typesense",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Wrapper around Typesense SDK with advanced TypeScript inference",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@vitest/coverage-c8": "^0.29.7",
     "@vitest/ui": "^0.29.7",
+    "prettier": "^2.8.7",
     "tsup": "^6.7.0",
     "typescript": "^5.0.2",
     "vitest": "^0.29.7"

@@ -57,6 +57,9 @@ export type UnsearchableFieldKeys<TFieldsSchema extends TypesenseFieldsSchema> =
 export type SearchableFieldKeys<TFieldsSchema extends TypesenseFieldsSchema> =
   Exclude<AllFieldKeys<TFieldsSchema>, UnsearchableFieldKeys<TFieldsSchema>>;
 
+export type VectorFieldKeys<TFieldsSchema extends TypesenseFieldsSchema> =
+  FilterFields<TFieldsSchema, { type: "float[]" }>;
+
 export type FieldTypeToJsType<T extends string> = T extends "string"
   ? string
   : T extends "int32"
