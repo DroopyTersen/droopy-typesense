@@ -1,6 +1,7 @@
 import { Client } from "typesense";
 
 import {
+  FilterCriteria,
   MultiSearchRequestSchema,
   MultiSearchResponse,
   SearchCriteria,
@@ -12,6 +13,7 @@ import {
 } from "./typesense.types";
 import {
   DEFAULT_TOKEN_SEPARATORS,
+  convertFilterToString,
   parseResponseFacets,
   toFieldsArray,
   toSearchParams,
@@ -145,6 +147,17 @@ export const createTypesenseCollection = <
     let existing = await getDocument(id);
     if (!existing) return Promise.resolve(null);
     return collection.documents(id).delete();
+  };
+
+  const deleteDocuments = async (
+    deleteQuery: FilterCriteria<TSchema["fields"]>
+  ) => {
+    let collection = await ensureCollection();
+    let filterStr = convertFilterToString(deleteQuery);
+    if (!filterStr) {
+      return Promise.resolve(null);
+    }
+    return collection.documents().delete(filterStr);
   };
 
   const updateDocument = async (id: string, document: TDocument) => {

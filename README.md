@@ -97,6 +97,7 @@ The function returns an object with the following methods:
 | ensureCollection | Ensures the collection exists. If it doesn't, the collection is created with the provided schema.         |
 | importDocuments  | Imports documents into the collection. Takes an array of documents as its argument.                       |
 | deleteDocument   | Deletes a document by its ID.                                                                             |
+| deleteDocuments  | Deletes documents based on filter criteria                                                                |
 | updateDocument   | Updates a document by its ID. If the document doesn't exist, it creates a new one with the provided data. |
 | deleteCollection | Deletes the entire collection.                                                                            |
 | search           | Searches the collection using search criteria.                                                            |
