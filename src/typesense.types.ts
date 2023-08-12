@@ -1,5 +1,12 @@
 import { FieldType } from "typesense/lib/Typesense/Collection";
-import { SearchParams } from "typesense/lib/Typesense/Documents";
+import type { SearchParams } from "typesense/lib/Typesense/Documents";
+import type { MultiSearchResponse } from "typesense/lib/Typesense/MultiSearch";
+export type {
+  MultiSearchResponse,
+  MultiSearchRequestSchema,
+} from "typesense/lib/Typesense/MultiSearch";
+export type { SearchParams } from "typesense/lib/Typesense/Documents";
+
 export type TypesenseConfig = {
   apiKey: string;
   url: string;
@@ -146,6 +153,7 @@ export type SearchCriteria<TFieldsSchema extends TypesenseFieldsSchema> = {
   filter?: FilterCriteria<TFieldsSchema> | string;
   /** Raw typesense Search Params overrides */
   _searchParams?: Partial<SearchParams>;
+  include?: AllFieldKeys<TFieldsSchema>[];
 };
 
 export type FacetCriteria<TFieldsSchema extends TypesenseFieldsSchema> = (
@@ -197,3 +205,6 @@ export type SearchResponseFacets<TFieldsSchema extends TypesenseFieldsSchema> =
       value: string;
     };
   };
+
+export type VectorSearchResult<TDocument extends Record<string, any>> =
+  MultiSearchResponse<TDocument>["results"][0];

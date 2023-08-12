@@ -1,10 +1,14 @@
 import { Client } from "typesense";
+
 import {
-  AllFieldKeys,
+  MultiSearchRequestSchema,
+  MultiSearchResponse,
   SearchCriteria,
+  SearchResponseFacets,
   TypeSenseCollectionDocument,
   TypesenseCollectionSchema,
   VectorFieldKeys,
+  VectorSearchResult,
 } from "./typesense.types";
 import {
   DEFAULT_TOKEN_SEPARATORS,
@@ -13,19 +17,34 @@ import {
   toSearchParams,
 } from "./typesense.utils";
 import {
-  MultiSearchRequestSchema,
-  MultiSearchResponse,
-} from "typesense/lib/Typesense/MultiSearch";
+  ImportResponse,
+  SearchResponse,
+  SearchResponseHit,
+} from "typesense/lib/Typesense/Documents";
+import Collection from "typesense/lib/Typesense/Collection";
 
-export const createTypesenseRepo = <
+export type {
+  ImportResponse,
+  SearchResponse,
+  SearchResponseHit,
+} from "typesense/lib/Typesense/Documents";
+export { default as Collection } from "typesense/lib/Typesense/Collection";
+
+export const createTypesenseCollection = <
   const TSchema extends TypesenseCollectionSchema
 >(
   client: Client,
   collectionSchema: TSchema
 ) => {
   type TDocument = TypeSenseCollectionDocument<TSchema["fields"]>;
-
-  const ensureCollection = async () => {
+  type TCollection = Collection<TypeSenseCollectionDocument<TSchema["fields"]>>;
+  type TSearchResponse = SearchResponse<
+    TypeSenseCollectionDocument<TSchema["fields"]> & {
+      hits: SearchResponseHit<TypeSenseCollectionDocument<TSchema["fields"]>>[];
+      facets: SearchResponseFacets<TSchema["fields"]>;
+    }
+  >;
+  const ensureCollection = async (): Promise<TCollection> => {
     try {
       let exists = await client
         .collections<TDocument>(collectionSchema.name)
@@ -41,67 +60,75 @@ export const createTypesenseRepo = <
     } catch (err: any) {
       console.log("error in ensureCollection", err);
     }
-    return client.collections<TDocument>(collectionSchema.name);
+    let collection = client.collections<TDocument>(collectionSchema.name);
+    return collection;
   };
-  const deleteCollection = async () => {
+  const deleteCollection = async (): Promise<void> => {
     let exists = await client.collections(collectionSchema.name).exists();
     if (exists) {
-      return client.collections(collectionSchema.name).delete();
+      await client.collections(collectionSchema.name).delete();
     }
   };
 
-  const importDocuments = async (documents: TDocument[]) => {
+  const importDocuments = async (
+    documents: TDocument[]
+  ): Promise<ImportResponse[]> => {
     let collection = await ensureCollection();
-    return collection.documents().import(documents, {
+    let result = collection.documents().import(documents, {
       action: "upsert",
       dirty_values: "coerce_or_drop",
       return_id: true,
     });
+    return result;
   };
 
-  const search = async (searchCriteria: SearchCriteria<TSchema["fields"]>) => {
+  const search = async (
+    searchCriteria: SearchCriteria<TSchema["fields"]>
+  ): Promise<TSearchResponse> => {
     let collection = await ensureCollection();
     let response = await collection
       .documents()
       .search(toSearchParams(searchCriteria, collectionSchema.fields));
-
     return {
       ...response,
-      hits: Array.from(response.hits || []),
       facets: parseResponseFacets(response),
-    };
+    } as TSearchResponse;
   };
 
   const vectorSearch = async ({
     field,
     vector,
-    numResults = 10,
-    include,
+    searchCriteria,
   }: {
     /** The vector field name to query */
     field: VectorFieldKeys<TSchema["fields"]>;
     /** The vector/embedding */
     vector: number[];
-    /** Defaults to 10 */
-    numResults?: number;
-    /** Defaults to everything */
-    include?: AllFieldKeys<TSchema["fields"]>[];
+    searchCriteria?: SearchCriteria<TSchema["fields"]>;
   }) => {
-    let vectorQueryParams: MultiSearchRequestSchema = {
-      collection: collectionSchema.name,
-      vector_query: `${(field as string) + ""}:([${vector.join(
-        ","
-      )}], k:${numResults})`,
-      query_by: "",
+    const vectorDefaults: SearchCriteria<TSchema["fields"]> = {
+      queryBy: {},
       q: "*",
     };
-    if (include) {
-      vectorQueryParams["include_fields"] = include.join(",");
-    }
-    let response = client.multiSearch.perform({
+    let searchParams = toSearchParams(
+      {
+        ...vectorDefaults,
+        ...searchCriteria,
+      },
+      collectionSchema.fields
+    );
+    let vectorQueryParams: MultiSearchRequestSchema = {
+      collection: collectionSchema.name,
+      vector_query: `${(field as string) + ""}:([${vector.join(",")}])`,
+      ...searchParams,
+    };
+    console.log("🚀 | vectorQueryParams:", vectorQueryParams);
+    let response = await client.multiSearch.perform({
       searches: [vectorQueryParams],
-    }) as unknown as MultiSearchResponse<TDocument>;
-    return response;
+    });
+    console.log("🚀 | response:", response);
+
+    return response?.results?.[0] as VectorSearchResult<TDocument>;
   };
 
   const getDocument = async (id: string) => {
@@ -138,6 +165,8 @@ export const createTypesenseRepo = <
     deleteCollection,
     search,
     vectorSearch,
-    _collection: client.collections<TDocument>(collectionSchema.name),
+    _collection: client.collections<TDocument>(
+      collectionSchema.name
+    ) as TCollection,
   };
 };

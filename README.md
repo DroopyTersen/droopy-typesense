@@ -10,7 +10,7 @@ Enhances your experience with Typesense Node SDK by providing better type infere
 **Table of Contents**
 
 - [Installation](#installation)
-- [createTypesenseRepo](#createtypesenserepo)
+- [createTypesenseCollection](#createtypesensecollection)
   - [Params](#params)
   - [Returns](#returns)
   - [Defining a Schema](#defining-a-schema)
@@ -31,16 +31,18 @@ npm install droopy-typesense
 yarn add droopy-typesense
 ```
 
-## createTypesenseRepo
+## createTypesenseCollection
 
-The `createTypesenseRepo` function is a factory function that creates a repository object for interacting with a Typesense collection.
+The `createTypesenseCollection` function is a factory function that creates a repository object for interacting with a Typesense collection.
 
 The function takes a Typesense client instance and a collection schema as its arguments and returns an object with methods for creating, updating, deleting, and searching documents in the collection.
 
-```ts
-import { createTypesenseRepo } from "droopy-typesense";
+It safely ensures the collection exists, creating it if it does not.
 
-let bookmarks = createTypesenseRepo(
+```ts
+import { createTypesenseCollection } from "droopy-typesense";
+
+let bookmarks = createTypesenseCollection(
   createTypesenseClient({
     apiKey: process.env.TYPESENSE_API_KEY,
     url: process.env.TYPESENSE_URL,
@@ -219,7 +221,7 @@ export const createSearchService = (collectionId: string) => {
     apiKey: getEnvVar("TYPESENSE_API_KEY"),
     url: getEnvVar("TYPESENSE_URL"),
   });
-  let bookmarks = createTypesenseRepo(client, schema);
+  let bookmarks = createTypesenseClient(client, schema);
   return {
     bookmarks,
   };

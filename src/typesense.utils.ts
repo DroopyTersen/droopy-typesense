@@ -113,6 +113,11 @@ export const toSearchParams = <TFieldsSchema extends TypesenseFieldsSchema>(
       params.filter_by = convertFilterToString(criteria.filter);
     }
   }
+
+  // Inlclude
+  if (criteria.include) {
+    params.include_fields = criteria.include.join(",");
+  }
   return {
     ...params,
     ...criteria._searchParams,

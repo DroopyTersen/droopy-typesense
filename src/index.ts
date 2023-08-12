@@ -1,3 +1,3 @@
 export { createTypesenseClient } from "./createTypesenseClient";
-export { createTypesenseRepo } from "./createTypesenseRepo";
+export * from "./createTypesenseCollection";
 export * from "./typesense.types";
