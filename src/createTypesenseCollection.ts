@@ -174,6 +174,7 @@ export const createTypesenseCollection = <
     ensureCollection,
     importDocuments,
     deleteDocument,
+    deleteDocuments,
     updateDocument,
     deleteCollection,
     search,
