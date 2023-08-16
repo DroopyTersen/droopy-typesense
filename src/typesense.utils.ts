@@ -78,7 +78,13 @@ export const toSearchParams = <TFieldsSchema extends TypesenseFieldsSchema>(
     q: criteria.q || "*",
     query_by,
     query_by_weights,
-  };
+    prefix: criteria.prefix ?? false,
+    per_page: criteria?.per_page || 25,
+    page: criteria?.page || 1,
+  } as any;
+  if (!params.query_by_weights) {
+    delete params.query_by_weights;
+  }
   // SORTING
   if (criteria.sort) {
     if (typeof criteria.sort === "string") {
@@ -114,10 +120,24 @@ export const toSearchParams = <TFieldsSchema extends TypesenseFieldsSchema>(
     }
   }
 
-  // Inlclude
+  // Include
   if (criteria.include) {
     params.include_fields = criteria.include.join(",");
   }
+
+  // Exclude
+  if (criteria.exclude) {
+    params.exclude_fields = criteria.exclude.join(",");
+  }
+
+  // GroupBy
+  if (criteria.groupBy) {
+    params.group_by = criteria.groupBy.join(",");
+  }
+  if (criteria.groupLimit) {
+    params.group_limit = criteria.groupLimit;
+  }
+
   return {
     ...params,
     ...criteria._searchParams,
@@ -182,9 +202,12 @@ export function convertFilterToString<
 
   for (const key in filter) {
     const value: any = filter[key as SearchableFieldKeys<TFieldsSchema>];
-
-    if (Array.isArray(value)) {
-      if (typeof value[0] === "object" && !Array.isArray(value[0])) {
+    if (value === undefined || value === null) {
+      continue;
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        continue;
+      } else if (typeof value[0] === "object" && !Array.isArray(value[0])) {
         // Handle array of filter operator objects
         const subClauses: string[] = [];
 

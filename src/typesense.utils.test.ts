@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { convertFilterToString, toSearchParams } from "./typesense.utils";
 import {
-  SearchCriteria,
-  TypesenseCollectionSchema,
-  TypesenseFieldsSchema,
-} from "./typesense.types";
+  convertFilterToString,
+  toSearchParams,
+  toFieldsArray,
+} from "./typesense.utils";
+import { SearchCriteria } from "./typesense.types";
+
 describe("convertFilterToString", () => {
   it("should convert a simple filter object to a Typesense filter string", () => {
     const filter = {
@@ -59,6 +60,48 @@ describe("convertFilterToString", () => {
 
     expect(result).toBe(expected);
   });
+
+  it("should ignore empty filter arrays", () => {
+    const filter = {
+      country: "United States",
+      category: [],
+      price: {
+        gte: 100,
+      },
+    };
+
+    const expected = "country:=United States && price:>=100";
+    const result = convertFilterToString(filter);
+
+    expect(result).toBe(expected);
+  });
+  it("should ignore null and undefined filter values", () => {
+    const filter = {
+      country: "United States",
+      category: null,
+      price: {
+        gte: 100,
+      },
+    };
+
+    const expected = "country:=United States && price:>=100";
+    const result = convertFilterToString(filter);
+
+    expect(result).toBe(expected);
+
+    const filter2 = {
+      country: "United States",
+      category: undefined,
+      price: {
+        gte: 100,
+      },
+    };
+
+    const expected2 = "country:=United States && price:>=100";
+    const result2 = convertFilterToString(filter2);
+
+    expect(result2).toBe(expected2);
+  });
 });
 
 describe("toSearchParams", () => {
@@ -74,7 +117,7 @@ describe("toSearchParams", () => {
     const result = toSearchParams(criteria, fields);
     expect(result).toEqual({
       q: "*",
-      query_by: "name,description,price",
+      query_by: "name,description",
     });
   });
 
@@ -97,7 +140,7 @@ describe("toSearchParams", () => {
     const result = toSearchParams(criteria, fields);
     expect(result).toEqual({
       q: "*",
-      query_by: "name,description,price",
+      query_by: "name,description",
       sort_by: "price:desc",
     });
   });
@@ -109,7 +152,7 @@ describe("toSearchParams", () => {
     const result = toSearchParams(criteria, fields);
     expect(result).toEqual({
       q: "*",
-      query_by: "name,description,price",
+      query_by: "name,description",
       sort_by: "price:desc,name:asc",
     });
   });
@@ -122,9 +165,77 @@ describe("toSearchParams", () => {
     const result = toSearchParams(criteria, fields);
     expect(result).toEqual({
       q: "*",
-      query_by: "name,description,price",
+      query_by: "name,description",
       facet_by: "name,price",
       max_facet_values: 5,
+    });
+  });
+
+  it("should handle filter criteria", () => {
+    const criteria: SearchCriteria<typeof fields> = {
+      filter: {
+        price: {
+          gte: 100,
+          lt: 500,
+        },
+      },
+    };
+    const result = toSearchParams(criteria, fields);
+    expect(result).toEqual({
+      q: "*",
+      query_by: "name,description",
+      filter_by: "(price:>=100 && price:<500)",
+    });
+  });
+  it("Should strip out empty filter arrays", () => {
+    const criteria: SearchCriteria<any> = {
+      q: "*",
+      sort: undefined,
+      per_page: 50,
+      page: 1,
+      filter: {
+        "creator.name": [],
+        "team.id": "dc262ab3-91c9-4c4d-ae26-7675571dd291",
+        "timeline.title": [],
+        tags: undefined,
+        month: [],
+        dot_type: [],
+      },
+      facets: ["month", "tags", "timeline.title", "creator.name", "dot_type"],
+    };
+
+    const result = toSearchParams(criteria, fields);
+    expect(result?.filter_by).toBe(
+      "team.id:=dc262ab3-91c9-4c4d-ae26-7675571dd291"
+    );
+  });
+});
+
+describe("toFieldsArray", () => {
+  it("should return an array of field names", () => {
+    const fields = {
+      id: { type: "string" },
+      name: { type: "string", facet: true, sort: true },
+      description: { type: "string" },
+      price: { type: "float", facet: true, sort: true },
+    } as const;
+
+    const result = toFieldsArray(fields);
+    // result should start with { name: ".*", type: "auto"}
+    expect(result.length).toBe(5);
+    expect(result[0]?.name).toEqual(".*");
+    expect(result[0]?.type).toEqual("auto");
+    expect(result[1]).toEqual({
+      name: "id",
+      type: "string",
+      optional: false,
+    });
+    expect(result[2]).toEqual({
+      name: "name",
+      type: "string",
+      optional: false,
+      facet: true,
+      sort: true,
     });
   });
 });

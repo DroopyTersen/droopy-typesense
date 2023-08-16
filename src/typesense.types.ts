@@ -11,6 +11,10 @@ export type TypesenseConfig = {
   apiKey: string;
   url: string;
 };
+type LooseAutocomplete<T extends string> = T | Omit<string, T>;
+type AvailableEmbedModels =
+  | "ts/all-MiniLM-L12-v2"
+  | "openai/text-embedding-ada-002";
 export type TypesenseFieldType = FieldType;
 
 export type TypesenseField = {
@@ -22,6 +26,16 @@ export type TypesenseField = {
   locale?: string;
   infix?: boolean;
   num_dim?: number;
+  /** Used for auto embedding */
+  embed?: {
+    /** List of fields combine and embed */
+    from: string[];
+    model_config: {
+      model_name: LooseAutocomplete<AvailableEmbedModels>;
+      api_key?: string;
+      [key: string]: any;
+    };
+  };
 };
 export interface IdField extends Omit<TypesenseField, "optional"> {
   type: "string";
@@ -153,7 +167,16 @@ export type SearchCriteria<TFieldsSchema extends TypesenseFieldsSchema> = {
   filter?: FilterCriteria<TFieldsSchema> | string;
   /** Raw typesense Search Params overrides */
   _searchParams?: Partial<SearchParams>;
+  /** Specify which fields to include in the results */
   include?: AllFieldKeys<TFieldsSchema>[];
+  /** Exclude fields from the results */
+  exclude?: AllFieldKeys<TFieldsSchema>[];
+  /** Group results by a facetable field */
+  groupBy?: FacetableFieldKeys<TFieldsSchema>[];
+  /** The max results to bring back for each group */
+  groupLimit?: number;
+  /** Defaults to false. Setting prefix to true is what you want for typeahead/instant search experiences */
+  prefix?: boolean;
 };
 
 export type FacetCriteria<TFieldsSchema extends TypesenseFieldsSchema> = (
@@ -207,4 +230,27 @@ export type SearchResponseFacets<TFieldsSchema extends TypesenseFieldsSchema> =
   };
 
 export type VectorSearchResult<TDocument extends Record<string, any>> =
-  MultiSearchResponse<TDocument>["results"][0];
+  MultiSearchResponse<TDocument[]>["results"][number];
+
+// const fields = {
+//   id: { type: "string" },
+//   name: { type: "string", facet: true, sort: true },
+//   date: { type: "int64", facet: true, sort: true },
+//   team_id: { type: "string", facet: true },
+//   embedding: {
+//     type: "float[]",
+//     embed: {
+//       from: ["name"],
+//       model_config: {
+//         model_name: "ts/all-MiniLM-L12-v2",
+//       },
+//     },
+//   },
+// } satisfies TypesenseFieldsSchema;
+
+// let filterCriteria: FilterCriteria<typeof fields> = {};
+
+// let searchCriteria: SearchCriteria<typeof fields> = {
+//   facets: ["team_id", "date"],
+//   filter: {},
+// };

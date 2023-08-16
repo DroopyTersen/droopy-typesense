@@ -8,6 +8,7 @@ import {
   SearchResponseFacets,
   TypeSenseCollectionDocument,
   TypesenseCollectionSchema,
+  TypesenseFieldsSchema,
   VectorFieldKeys,
   VectorSearchResult,
 } from "./typesense.types";
@@ -28,6 +29,7 @@ import Collection from "typesense/lib/Typesense/Collection";
 export type {
   ImportResponse,
   SearchResponse,
+  DeleteResponse,
   SearchResponseHit,
 } from "typesense/lib/Typesense/Documents";
 export { default as Collection } from "typesense/lib/Typesense/Collection";
@@ -88,9 +90,9 @@ export const createTypesenseCollection = <
     searchCriteria: SearchCriteria<TSchema["fields"]>
   ): Promise<TSearchResponse> => {
     let collection = await ensureCollection();
-    let response = await collection
-      .documents()
-      .search(toSearchParams(searchCriteria, collectionSchema.fields));
+    let searchParams = toSearchParams(searchCriteria, collectionSchema.fields);
+    console.log("🚀 | searchParams:", searchParams);
+    let response = await collection.documents().search(searchParams);
     return {
       ...response,
       facets: parseResponseFacets(response),
@@ -124,11 +126,9 @@ export const createTypesenseCollection = <
       vector_query: `${(field as string) + ""}:([${vector.join(",")}])`,
       ...searchParams,
     };
-    console.log("🚀 | vectorQueryParams:", vectorQueryParams);
     let response = await client.multiSearch.perform({
       searches: [vectorQueryParams],
     });
-    console.log("🚀 | response:", response);
 
     return response?.results?.[0] as VectorSearchResult<TDocument>;
   };
@@ -157,7 +157,9 @@ export const createTypesenseCollection = <
     if (!filterStr) {
       return Promise.resolve(null);
     }
-    return collection.documents().delete(filterStr);
+    return collection.documents().delete({
+      filter_by: filterStr,
+    });
   };
 
   const updateDocument = async (id: string, document: TDocument) => {
@@ -184,3 +186,44 @@ export const createTypesenseCollection = <
     ) as TCollection,
   };
 };
+
+// const fields = {
+//   id: { type: "string" },
+//   name: { type: "string", facet: true, sort: true },
+//   date: { type: "int64", facet: true, sort: true },
+//   team_id: { type: "string", facet: true },
+//   embedding: {
+//     type: "float[]",
+//     embed: {
+//       from: ["name"],
+//       model_config: {
+//         model_name: "ts/all-MiniLM-L12-v2",
+//       },
+//     },
+//   },
+// } satisfies TypesenseFieldsSchema;
+
+// let collection = createTypesenseCollection(null as any, {
+//   name: "test",
+//   fields: {
+//     id: { type: "string" },
+//     name: { type: "string", facet: true, sort: true },
+//     date: { type: "int64", facet: true, sort: true },
+//     team_id: { type: "string", facet: true },
+//     embedding: {
+//       type: "float[]",
+//       embed: {
+//         from: ["name"],
+//         model_config: {
+//           model_name: "ts/all-MiniLM-L12-v2",
+//         },
+//       },
+//     },
+//   } satisfies TypesenseFieldsSchema,
+// });
+
+// collection.search({
+//   filter: {
+
+//   },
+// });
