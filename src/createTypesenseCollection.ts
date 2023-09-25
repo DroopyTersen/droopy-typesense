@@ -91,7 +91,6 @@ export const createTypesenseCollection = <
   ): Promise<TSearchResponse> => {
     let collection = await ensureCollection();
     let searchParams = toSearchParams(searchCriteria, collectionSchema.fields);
-    console.log("🚀 | searchParams:", searchParams);
     let response = await collection.documents().search(searchParams);
     return {
       ...response,
